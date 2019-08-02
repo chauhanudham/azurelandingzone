@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.name }}
+    helm.sh/chart: {{ include "platform.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Values.name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kops.k8s.io/instancegroup
+                operator: In
+                values:
+                - {{ .Release.Namespace }}
+    spec:
+      containers:
+        - name: {{ .Values.name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+#          env:
+#          - name: CONSUL_URL
+#            value: {{ .Values.consulAddress }}
+#          - name: CONSUL_TOKEN
+#            valueFrom:
+#              secretKeyRef:
+#                key: consul-token
+#                name: consul-token
+#          - name: PREFIX_MAIN
+#            value: {{ .Release.Namespace }}/{{ .Values.name }}
+#          - name: PREFIX_DB
+#            value: {{ .Release.Namespace }}/global
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+#          resources:
+#            limits:
+#              cpu: {{ .Values.resources.limits.cpu }}
+#              memory: {{ .Values.resources.limits.memory }}
+#            requests:
+#              cpu: {{ .Values.resources.requests.cpu }}
+#              memory: {{ .Values.resources.requests.memory }}
+
